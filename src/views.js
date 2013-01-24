@@ -24,7 +24,7 @@ Generic = {
 };
 
 Generic.defaults = {
-  events:Generic.actionEvents('mouseover','mousein','mousemove','click','focus','dblclick'),
+  events:Generic.actionEvents('mouseover','mousein','click','focus','dblclick'),
   action:Generic.action,
   // default events for model
   modelEvents: {
@@ -59,17 +59,7 @@ Generic.DetailView = Marionette.Layout.extend(_.defaults({
     loadingTemplate:undefined,
 
     // action resolver - invokes action specified in data-action attribute
-    action:Generic.action,
-
-    // returns loading template for loading model
-    getTemplate:function(){
-        if(this.model._loading && this.loadingTemplate){
-          console.log(this.template,'test');
-          return this.loadingTemplate;
-        }else{
-            return Marionette.Layout.prototype.getTemplate.apply(this)
-        }
-    }
+    action:Generic.action
 },Generic.defaults));
 
 //
