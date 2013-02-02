@@ -15,11 +15,14 @@ BaseMixin.extend = Marionette.extend;
 
 function _super(type, instance, attr, safe){
 
-  while(!instance.hasOwnProperty(attr) || instance[attr] !== type.prototype[attr]){
+  while(instance[attr] !== type.prototype[attr]){
+    instance = instance.constructor.__super__;
+  }
+  while(instance[attr] === type.prototype[attr]){
     instance = instance.constructor.__super__;
   }
 
-  var rv = instance.constructor.__super__[attr];
+  var rv = instance[attr];
 
   if (_.isUndefined(rv) && safe){
     return new Function;
@@ -27,6 +30,24 @@ function _super(type, instance, attr, safe){
     return rv;
   }
 }
+
+
+// ????? backbone.super
+
+// function _super(type, instance, attr, safe){
+//   var object = instance;
+//   while(instance[attr] === object[attr]){
+//     object = object.constructor.__super__;
+//   }
+
+//   var rv = object[attr];
+
+//   if (_.isUndefined(rv) && safe){
+//     return new Function;
+//   } else {
+//     return rv;
+//   }
+// }
 
 SortMixin = BaseMixin.extend({
   onSort:function(e){
@@ -112,6 +133,7 @@ WidgetMixin = BaseMixin.extend({
 });
 
 
+
 SelectMixin = BaseMixin.extend({
   onItemviewToggle:function(view){
     this.selected = view.model.id;
@@ -121,3 +143,4 @@ SelectMixin = BaseMixin.extend({
     return this.selected;
   }
 });
+
