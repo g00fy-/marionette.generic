@@ -5,11 +5,7 @@ Generic = {
         // try to find action on this.$el
         action = this.$el.data('action');
     }
-    if (typeof this[action] == 'function'){
-        event.stopPropagation();
-        this[action](event);
-    }
-    this.trigger('action:'+action);
+    this.triggerMethod(action,event);
   },
   actionEvents: function(){
     var events = {

@@ -29,7 +29,7 @@ function _super(type, instance, attr, safe){
 }
 
 SortMixin = BaseMixin.extend({
-  sort:function(e){
+  onSort:function(e){
     var $el =  $(e.target).closest('[data-order]')
     var order = $el.data('order');
     var field = $el.data('field');
@@ -48,10 +48,6 @@ MultiSelectMixin = BaseMixin.extend({
   contribute: function(target){
     return target.extend({
 
-      listeners: _.defaults({}, target.prototype.listeners, {
-        'itemview:toggle':"toggle"
-      }),
-
       itemView: target.prototype.itemView.extend({
         triggers:{
           "click .label":"toggle"
@@ -69,7 +65,7 @@ MultiSelectMixin = BaseMixin.extend({
     },this);
   },
 
-  toggle:function(itemView){
+  onItemviewToggle:function(itemView){
     if(_.contains(this.options.selected,itemView.model.id)){
       this.options.selected = _.without(this.options.selected,itemView.model.id);
     }else{
@@ -85,8 +81,8 @@ MultiSelectMixin = BaseMixin.extend({
 });
 
 SearchMixin = BaseMixin.extend({
-  search: _.debounce(function(e){
-    _super(SearchMixin, this, "search", true).call(this, e);
+  onSearch: _.debounce(function(e){
+    _super(SearchMixin, this, "onSearch", true).call(this, e);
     var $el =  $(e.target).closest('[data-action]');
     var value = $el.val() || undefined;
     this.collection.refetch({data:{name__icontains:value}});
@@ -107,11 +103,21 @@ WidgetMixin = BaseMixin.extend({
     if(this.collection){
       this.collection.fetch();
     }
-
+  },
+  onChange:function(e){
     if(this.options.vent){
-      this.on('change',function(value){
-        this.options.vent.triggerMethod(this.name,value,this);
-      }.bind(this))
+      this.options.vent.triggerMethod(this.name, _.result(this,'value'));
     }
+  }
+});
+
+
+SelectMixin = BaseMixin.extend({
+  onItemviewToggle:function(view){
+    this.selected = view.model.id;
+    this.triggerMethod('change');
+  },
+  value:function(){
+    return this.selected;
   }
 });
