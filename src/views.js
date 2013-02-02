@@ -34,6 +34,7 @@ Generic.defaults = {
 //    "change": "render"
     "sync":"render"
   },
+  
   bindListeners:function(){
     var self = this;
     _.each(this.listeners||{},function(listener,trigger){
@@ -47,9 +48,11 @@ Generic.defaults = {
 
     });
   },
+
   selector:function(){
     return this.$('[data-bind]:not([data-view][data-view!='+this.cid+'] [data-bind])');
   },
+
   value:function(){
      var value = {};
      _.each(this.regionManagers,function(region,name){
@@ -61,8 +64,10 @@ Generic.defaults = {
         value[el.dataset['bind']]= $(el).val() || $(el).text();
      });
      return value
-  }
+  },
+
 };
+
 
 Generic.ListItemView = Marionette.ItemView.extend(_.defaults({
   template: _.template('<%= data.id || data.cid %>'),
@@ -96,26 +101,16 @@ Generic.ListView = Marionette.CompositeView.extend(_.defaults({
         }else{
             return this.collection;
         }
-    },
-    sort:function(e){
-      var $el =  $(e.target).closest('[data-order]')
-      var order = $el.data('order');
-      var field = $el.data('field');
-      if(order =='desc'){
-        field = '-'+field;
-        $el.data('order','asc')
-      }else{
-        $el.data('order','desc')
-      }
+    }
 
-      this.collection.refetch({data:{order:field}})
-    },
-    search:_.debounce(function(e){
-      var $el =  $(e.target).closest('[data-action]');
-      var value = $el.val() || undefined;
-      this.collection.refetch({data:{name__icontains:value}});
-    },100)
-},Generic.defaults));
+},Generic.defaults), {
+      mixin: function(){
+      return _.reduceRight(arguments, function(current, mixin){
+        return mixin.contribute(current);
+      }, this);
+
+    }
+});
 
 Generic.PageView = Marionette.Layout.extend(_.defaults({
     asideView:undefined,
@@ -127,15 +122,18 @@ Generic.PageView = Marionette.Layout.extend(_.defaults({
     },
     modelEvents:{},
 //    modelEvents: {},
-  render: function(){ console.log("pageview render", this.cid); return Marionette.Layout.prototype.render.apply(this, arguments)},
-    onRender: function(){
-        if(this.mainView){
-            this.main.show(new this.mainView(this.options));
-        }
-        if(this.asideView){
-            this.aside.show(new this.asideView(this.options));
-        }
+  render: function(){ 
+    console.log("pageview render", this.cid); 
+    return Marionette.Layout.prototype.render.apply(this, arguments)
+  },
+  onRender: function(){
+    if(this.mainView){
+        this.main.show(new this.mainView(this.options));
     }
+    if(this.asideView){
+        this.aside.show(new this.asideView(this.options));
+    }
+  }
 },Generic.defaults));
 
 
@@ -162,13 +160,18 @@ Generic.PageView = Marionette.Layout.extend(_.defaults({
 
 
 Generic.AsideView = Marionette.CollectionView.extend({
-    widgets:[],
+  widgets:[],
+
   initialize:function(){
-    this.collection = new Backbone.Collection(_.map(this.widgets,function(widget){return {view:widget}}));
+    this.collection = new Backbone.Collection(_.map(this.widgets,function(widget){
+      return {view:widget}
+    }));
   },
+
   getItemView:function(item){
     return item.get('view');
   },
+
   itemViewOptions:function(){
     return this.options;
   }
