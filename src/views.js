@@ -64,8 +64,7 @@ Generic.defaults = {
         value[el.dataset['bind']]= $(el).val() || $(el).text();
      });
      return value
-  },
-
+  }
 };
 
 
