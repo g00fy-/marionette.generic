@@ -107,10 +107,10 @@ SearchMixin = BaseMixin.extend({
     _super(SearchMixin, this, "onSearch", true).call(this, e);
     var $el =  $(e.target).closest('[data-action]');
     var value = $el.val() || undefined;
-    this.collection.refetch(this.buildSearchQuery(value));
+    this.collection.refetch({data:this.buildSearchQuery(value)});
   }, 100),
   buildSearchQuery:function(value){
-    return {data:{name__icontains:value}}
+    return {name__icontains:value}
   }
 });
 
