@@ -1,9 +1,10 @@
 BaseMixin = function(){};
 
 BaseMixin.contribute = function(target){
-  target = target.extend(_.omit(this.prototype,'contribute','constructor'));
-  return this.prototype.contribute(target);
-}
+  target = target.extend(_.omit(this.prototype,'contribute','constructor','defaults'));
+  _.defaults(target.prototype,this.prototype.defaults||{});
+  return this.prototype.contribute(target)
+};
 
 _.extend(BaseMixin.prototype,{
   contribute:function(target){
@@ -144,3 +145,99 @@ SelectMixin = BaseMixin.extend({
   }
 });
 
+
+PaginatedMixin = BaseMixin.extend({
+  defaults:{
+    page:1,
+    paginateBy:10,
+    fetchOptions:{
+      data:{
+        limit:10
+      }
+    }
+  },
+  contribute:function(type){
+    if(type.prototype.fetchOptions.data.limit){
+      type.prototype.fetchOptions.data.limit = type.prototype.paginateBy || this.defaults.paginateBy;
+    }
+    return type;
+  },
+  hasPrevPage:function(){
+    return this.page>1
+  },
+  hasNextPage:function(){
+    return this.collection.meta.total>(this.page)*this.paginateBy;
+  },
+  onNextPage:function(){
+    if(this.hasNextPage()){
+      this.fetchPage(this.page+1).done(function(){
+        this.page++;
+        this.triggerMethod('page:changed');
+      }.bind(this));
+    }
+  },
+  onPrevPage:function(){
+    if(this.hasPrevPage()){
+      this.fetchPage(this.page-1).done(function(){
+        this.page--;
+        this.triggerMethod('page:changed');
+      }.bind(this));
+
+    }
+  },
+  onGetPage:function(e){
+
+  },
+  fetchPage:function(page){
+    return this.collection.refetch({
+      data:{
+        offset:this.paginateBy*(page-1),
+        limit:this.paginateBy
+      }
+    });
+  },
+  onPageChanged:function(){
+    if(this.ui.currentPage){
+      this.ui.currentPage.text(this.page);
+    }
+  }
+});
+
+PrefetchListMixin = BaseMixin.extend({
+  defaults:{
+    fetchOptions:{
+      data:{
+        limit:20
+      }
+    }
+  },
+  initialize:function(){
+    _super(PrefetchListMixin,this,'initialize',true).apply(this, arguments);
+
+    this.prefetch(Marionette.getOption(this,'fetchOptions'));
+  },
+  prefetch:function(options){
+    if(!this.collection.xhr){
+      this.collection.refetch(options);
+    }
+  }
+});
+
+LoadingMixin = BaseMixin.extend({
+  initialize:function(){
+
+    console.log('loading');
+    Marionette.bindEntityEvents(this,this.collection,{
+      'request':this.triggerMethod.bind(this,'request'),
+      'sync':this.triggerMethod.bind(this,'sync')
+    });
+    _super(LoadingMixin,this,'initialize',true).apply(this,arguments);
+  },
+  onRequest:function(collection,xhr,options){
+    xhr
+      .fail(this.triggerMethod.bind(this,'request:fail'))
+      .done(this.triggerMethod.bind(this,'request:done'))
+      .always(this.triggerMethod.bind(this,'request:finished'));
+    this.triggerMethod('request:start');
+  }
+});
