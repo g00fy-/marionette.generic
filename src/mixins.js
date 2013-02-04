@@ -107,6 +107,7 @@ SearchMixin = BaseMixin.extend({
     _super(SearchMixin, this, "onSearch", true).call(this, e);
     var $el =  $(e.target).closest('[data-action]');
     var value = $el.val() || undefined;
+    console.log(this.collection.fetchOptions);
     this.collection.refetch({data:{name__icontains:value}});
   }, 100)
 });
@@ -118,13 +119,7 @@ WidgetMixin = BaseMixin.extend({
     if(!this.collection && this.type || !(this.collection instanceof this.type)){
       this.collection = new this.type();
     }
-
-
     this.bindListeners();
-
-    if(this.collection){
-      this.collection.fetch();
-    }
   },
   onChange:function(e){
     if(this.options.vent){
@@ -197,10 +192,17 @@ PaginatedMixin = BaseMixin.extend({
     });
   },
   onPageChanged:function(){
-    if(this.ui.currentPage){
+    if((this.ui||{}).currentPage){
       this.ui.currentPage.text(this.page);
     }
+  },
+  onSearch:function(){
+    this.page = 1;
+    delete this.collection.fetchOptions.data.offset;
+    this.triggerMethod('page:changed')
+    return _super(PaginatedMixin,this, 'onSearch',true).apply(this, arguments);
   }
+
 });
 
 PrefetchListMixin = BaseMixin.extend({
