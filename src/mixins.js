@@ -103,15 +103,17 @@ MultiSelectMixin = BaseMixin.extend({
 });
 
 SearchMixin = BaseMixin.extend({
+  defaults:{
+    buildSearchQuery:function(value){
+      throw 'buildSearchQuery not defined';
+    }
+  },
   onSearch: _.debounce(function(e){
     _super(SearchMixin, this, "onSearch", true).call(this, e);
     var $el =  $(e.target).closest('[data-action]');
     var value = $el.val() || undefined;
     this.collection.refetch({data:this.buildSearchQuery(value)});
-  }, 100),
-  buildSearchQuery:function(value){
-    return {name__icontains:value}
-  }
+  }, 100)
 });
 
 WidgetMixin = BaseMixin.extend({
