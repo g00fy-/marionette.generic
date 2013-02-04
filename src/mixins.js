@@ -151,6 +151,14 @@ PaginatedMixin = BaseMixin.extend({
     paginateBy:10,
     fetchOptions:{
       data:{}
+    },
+    fetchPage:function(page){
+      return this.collection.refetch({
+        data:{
+          offset:this.paginateBy*(page-1),
+          limit:this.paginateBy
+        }
+      });
     }
   },
   hasPrevPage:function(){
@@ -171,14 +179,6 @@ PaginatedMixin = BaseMixin.extend({
   },
   onGetPage:function(e){
 
-  },
-  fetchPage:function(page){
-    return this.collection.refetch({
-      data:{
-        offset:this.paginateBy*(page-1),
-        limit:this.paginateBy
-      }
-    });
   },
   onPageChanged:function(){
     if((this.ui||{}).currentPage){
