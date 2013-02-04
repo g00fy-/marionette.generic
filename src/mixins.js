@@ -107,7 +107,6 @@ SearchMixin = BaseMixin.extend({
     _super(SearchMixin, this, "onSearch", true).call(this, e);
     var $el =  $(e.target).closest('[data-action]');
     var value = $el.val() || undefined;
-    console.log(this.collection.fetchOptions);
     this.collection.refetch({data:{name__icontains:value}});
   }, 100)
 });
@@ -146,16 +145,8 @@ PaginatedMixin = BaseMixin.extend({
     page:1,
     paginateBy:10,
     fetchOptions:{
-      data:{
-        limit:10
-      }
+      data:{}
     }
-  },
-  contribute:function(type){
-    if(type.prototype.fetchOptions.data.limit){
-      type.prototype.fetchOptions.data.limit = type.prototype.paginateBy || this.defaults.paginateBy;
-    }
-    return type;
   },
   hasPrevPage:function(){
     return this.page>1
@@ -165,19 +156,12 @@ PaginatedMixin = BaseMixin.extend({
   },
   onNextPage:function(){
     if(this.hasNextPage()){
-      this.fetchPage(this.page+1).done(function(){
-        this.page++;
-        this.triggerMethod('page:changed');
-      }.bind(this));
+      this.fetchPage(this.page+1)
     }
   },
   onPrevPage:function(){
     if(this.hasPrevPage()){
-      this.fetchPage(this.page-1).done(function(){
-        this.page--;
-        this.triggerMethod('page:changed');
-      }.bind(this));
-
+      this.fetchPage(this.page-1)
     }
   },
   onGetPage:function(e){
@@ -199,8 +183,15 @@ PaginatedMixin = BaseMixin.extend({
   onSearch:function(){
     this.page = 1;
     delete this.collection.fetchOptions.data.offset;
-    this.triggerMethod('page:changed')
+    this.triggerMethod('page:changed');
     return _super(PaginatedMixin,this, 'onSearch',true).apply(this, arguments);
+  },
+  onRequestFinished:function(){
+    var data = this.collection.fetchOptions.data
+    this.page = Math.floor(
+      (data.offset || 0) / this.paginateBy)+1;
+    this.triggerMethod('page:changed');
+    _super(PaginatedMixin,this,'onRequestFinished',true).apply(this,arguments);
   }
 
 });
@@ -208,17 +199,17 @@ PaginatedMixin = BaseMixin.extend({
 PrefetchListMixin = BaseMixin.extend({
   defaults:{
     fetchOptions:{
-      data:{
-        limit:20
-      }
+      data:{}
     }
   },
   initialize:function(){
     _super(PrefetchListMixin,this,'initialize',true).apply(this, arguments);
-
     this.prefetch(Marionette.getOption(this,'fetchOptions'));
   },
   prefetch:function(options){
+    if(!options.data.limit){
+      options.data.limit=this.paginateBy;
+    }
     if(!this.collection.xhr){
       this.collection.refetch(options);
     }
@@ -227,13 +218,12 @@ PrefetchListMixin = BaseMixin.extend({
 
 LoadingMixin = BaseMixin.extend({
   initialize:function(){
-
-    console.log('loading');
+    _super(LoadingMixin,this,'initialize',true).apply(this,arguments);
     Marionette.bindEntityEvents(this,this.collection,{
       'request':this.triggerMethod.bind(this,'request'),
       'sync':this.triggerMethod.bind(this,'sync')
     });
-    _super(LoadingMixin,this,'initialize',true).apply(this,arguments);
+
   },
   onRequest:function(collection,xhr,options){
     xhr
