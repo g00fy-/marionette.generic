@@ -52,53 +52,63 @@ function _super(type, instance, attr, safe){
 
 SortMixin = BaseMixin.extend({
   onSort:function(e){
-    var $el =  $(e.target).closest('[data-order]')
-    var order = $el.data('order');
-    var field = $el.data('field');
-    if(order =='desc'){
-      field = '-'+field;
-      $el.data('order','asc')
+    var $el =  $(e.target).closest('[data-order]');
+    var order = $el.attr('data-order') || 'desc';
+    var field = $el.attr('data-field');
+    if(order == 'desc'){
+      $el.attr('data-order','asc')
     }else{
-      $el.data('order','desc')
+      $el.attr('data-order','desc')
     }
-
-    this.collection.refetch({data:{order:field}})
+    this.collection.refetch({data:this.buildSortQuery(field,order)})
+  },
+  defaults:{
+      buildSortQuery:function(field,order){
+          throw 'buildSortQuery undefined';
+      }
   }
 });
 
 MultiSelectMixin = BaseMixin.extend({
-  contribute: function(target){
-    return target.extend({
-
-      itemView: target.prototype.itemView.extend({
-        triggers:{
-          "click .label":"toggle"
+  contribute:function(type){
+    if(type.prototype.itemView.prototype.value){
+      return type
+    }
+    return type.extend({
+      itemView:type.prototype.itemView.extend({
+        value:function(){
+          return this.model.id;
         }
       })
-    });
-
+    })
   },
 
+  initialize: function(){
+    this.selected = this.options.selected || [];
+    _super(MultiSelectMixin, this, "initialize", true).apply(this, arguments);
+  },
   onRender:function(){
     this.children.each(function(view){
-      if(_.contains(this.options.selected,view.model.id)){
+      if(_.contains(this.selected,view.model.id)){
         view.$el.addClass('error');
       }
     },this);
   },
 
   onItemviewToggle:function(itemView){
-    if(_.contains(this.options.selected,itemView.model.id)){
-      this.options.selected = _.without(this.options.selected,itemView.model.id);
+    if(_.contains(this.selected,itemView.value())){
+      this.selected = _.without(this.selected, itemView.value());
     }else{
-      this.options.selected.push(itemView.model.id);
+      this.selected.push(itemView.value());
     }
     itemView.$el.toggleClass("error");
+    this.triggerMethod("change");
   },
 
-  initialize:function(){
-    this.bindListeners();
+  value: function(){
+    return this.selected;
   }
+
 
 });
 
@@ -113,7 +123,7 @@ SearchMixin = BaseMixin.extend({
     var $el =  $(e.target).closest('[data-action]');
     var value = $el.val() || undefined;
     this.collection.refetch({data:this.buildSearchQuery(value)});
-  }, 100)
+  }, 500)
 });
 
 WidgetMixin = BaseMixin.extend({
@@ -135,9 +145,23 @@ WidgetMixin = BaseMixin.extend({
 
 
 SelectMixin = BaseMixin.extend({
-  onItemviewToggle:function(view){
-    this.selected = view.model.id;
-    this.triggerMethod('change');
+  contribute:function(type){
+    if(type.prototype.itemView.prototype.value){
+      return type
+    }
+    return type.extend({
+      itemView:type.prototype.itemView.extend({
+        value:function(){
+          return this.model.id;
+        }
+      })
+    })
+  },
+  defaults:{
+    onItemviewToggle:function(view){
+      this.selected = view.value();
+      this.triggerMethod('change');
+    }
   },
   value:function(){
     return this.selected;
@@ -152,6 +176,13 @@ PaginatedMixin = BaseMixin.extend({
     fetchOptions:{
       data:{}
     },
+    onRequestFinished:function(){
+      var data = this.collection.fetchOptions.data
+      this.page = Math.floor(
+        (data.offset || 0) / this.paginateBy)+1;
+      this.triggerMethod('page:changed');
+      _super(PaginatedMixin,this,'onRequestFinished',true).apply(this,arguments);
+    },
     fetchPage:function(page){
       return this.collection.refetch({
         data:{
@@ -159,13 +190,13 @@ PaginatedMixin = BaseMixin.extend({
           limit:this.paginateBy
         }
       });
+    },
+    hasPrevPage:function(){
+        return this.page>1
+    },
+    hasNextPage:function(){
+        return this.collection.meta.total>(this.page)*this.paginateBy;
     }
-  },
-  hasPrevPage:function(){
-    return this.page>1
-  },
-  hasNextPage:function(){
-    return this.collection.meta.total>(this.page)*this.paginateBy;
   },
   onNextPage:function(){
     if(this.hasNextPage()){
@@ -190,15 +221,7 @@ PaginatedMixin = BaseMixin.extend({
     delete this.collection.fetchOptions.data.offset;
     this.triggerMethod('page:changed');
     return _super(PaginatedMixin,this, 'onSearch',true).apply(this, arguments);
-  },
-  onRequestFinished:function(){
-    var data = this.collection.fetchOptions.data
-    this.page = Math.floor(
-      (data.offset || 0) / this.paginateBy)+1;
-    this.triggerMethod('page:changed');
-    _super(PaginatedMixin,this,'onRequestFinished',true).apply(this,arguments);
   }
-
 });
 
 PrefetchListMixin = BaseMixin.extend({
