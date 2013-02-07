@@ -181,7 +181,7 @@ SelectMixin = BaseMixin.extend({
 
 PaginatedMixin = BaseMixin.extend({
   defaults:[
-    'page','paginateBy','fetchOptions','onRequestFinished','fetchPage','hasPrevPage','hasNextPage'
+    'page','paginateBy','fetchOptions','fetchPage','hasPrevPage','hasNextPage'
   ],
 
   page:1,
@@ -190,26 +190,17 @@ PaginatedMixin = BaseMixin.extend({
     data:{}
   },
   onRequestFinished:function(){
-    var data = this.collection.fetchOptions.data
-    this.page = Math.floor(
-      (data.offset || 0) / this.paginateBy)+1;
     this.triggerMethod('page:changed');
     _super(PaginatedMixin,this,'onRequestFinished',true).apply(this,arguments);
   },
   fetchPage:function(page){
-    return this.collection.refetch({
-      data:{
-        offset:this.paginateBy*(page-1),
-        limit:this.paginateBy
-      }
-    });
+    throw 'fetchPage not implemented'
   },
   hasPrevPage:function(){
       return this.page>1
   },
   hasNextPage:function(){
-      return this.collection.meta.total>(this.page)*this.paginateBy;
-
+      return true;
   },
   onNextPage:function(){
     if(this.hasNextPage()){
@@ -244,11 +235,11 @@ PrefetchListMixin = BaseMixin.extend({
   },
   initialize:function(){
     _super(PrefetchListMixin,this,'initialize',true).apply(this, arguments);
-    this.prefetch(Marionette.getOption(this,'fetchOptions'));
+    this.prefetch(this.fetchOptions);
   },
   prefetch:function(options){
-    if(!options.data.limit){
-      options.data.limit=this.paginateBy;
+    if(this.paginateBy){
+        options.data.limit = this.paginateBy;
     }
     if(!this.collection.xhr){
       this.collection.refetch(options);
