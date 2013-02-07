@@ -1,8 +1,15 @@
 BaseMixin = function(){};
 
 BaseMixin.contribute = function(target){
-  target = target.extend(_.omit(this.prototype,'contribute','constructor','defaults'));
+  var contribution = _.omit.apply(
+    _,
+    [this.prototype,'contribute','constructor','defaults'].concat(this.prototype.defaults||[])
+  );
+  target = target.extend(contribution);
+
   _.defaults(target.prototype,this.prototype.defaults||{});
+
+  _.defaults(target.prototype, _.pick.apply(_,[this.prototype].concat(this.prototype.defaults)));
   return this.prototype.contribute(target)
 };
 
@@ -62,11 +69,11 @@ SortMixin = BaseMixin.extend({
     }
     this.collection.refetch({data:this.buildSortQuery(field,order)})
   },
-  defaults:{
-      buildSortQuery:function(field,order){
-          throw 'buildSortQuery undefined';
-      }
-  }
+
+  buildSortQuery:function(field,order){
+      throw 'buildSortQuery undefined';
+  },
+  defaults:['buildSortQuery']
 });
 
 MultiSelectMixin = BaseMixin.extend({
@@ -95,15 +102,20 @@ MultiSelectMixin = BaseMixin.extend({
     },this);
   },
 
+  onToggleItem:function(item,itemView){
+    itemView.$el.toggleClass('error');
+  },
+
   onItemviewToggle:function(itemView){
     if(_.contains(this.selected,itemView.value())){
       this.selected = _.without(this.selected, itemView.value());
     }else{
       this.selected.push(itemView.value());
     }
-    itemView.$el.toggleClass("error");
+    this.triggerMethod("toggle:item",itemView.model || itemView.collection ,itemView);
     this.triggerMethod("change");
   },
+
 
   value: function(){
     return this.selected;
@@ -113,10 +125,9 @@ MultiSelectMixin = BaseMixin.extend({
 });
 
 SearchMixin = BaseMixin.extend({
-  defaults:{
-    buildSearchQuery:function(value){
-      throw 'buildSearchQuery not defined';
-    }
+  defaults:['buildSearchQuery'],
+  buildSearchQuery:function(value){
+    throw 'buildSearchQuery not defined';
   },
   onSearch: _.debounce(function(e){
     _super(SearchMixin, this, "onSearch", true).call(this, e);
@@ -157,11 +168,10 @@ SelectMixin = BaseMixin.extend({
       })
     })
   },
-  defaults:{
-    onItemviewToggle:function(view){
-      this.selected = view.value();
-      this.triggerMethod('change');
-    }
+  defaults:['onItemviewToggle'],
+  onItemviewToggle:function(view){
+    this.selected = view.value();
+    this.triggerMethod('change');
   },
   value:function(){
     return this.selected;
@@ -170,33 +180,36 @@ SelectMixin = BaseMixin.extend({
 
 
 PaginatedMixin = BaseMixin.extend({
-  defaults:{
-    page:1,
-    paginateBy:10,
-    fetchOptions:{
-      data:{}
-    },
-    onRequestFinished:function(){
-      var data = this.collection.fetchOptions.data
-      this.page = Math.floor(
-        (data.offset || 0) / this.paginateBy)+1;
-      this.triggerMethod('page:changed');
-      _super(PaginatedMixin,this,'onRequestFinished',true).apply(this,arguments);
-    },
-    fetchPage:function(page){
-      return this.collection.refetch({
-        data:{
-          offset:this.paginateBy*(page-1),
-          limit:this.paginateBy
-        }
-      });
-    },
-    hasPrevPage:function(){
-        return this.page>1
-    },
-    hasNextPage:function(){
-        return this.collection.meta.total>(this.page)*this.paginateBy;
-    }
+  defaults:[
+    'page','paginateBy','fetchOptions','onRequestFinished','fetchPage','hasPrevPage','hasNextPage'
+  ],
+
+  page:1,
+  paginateBy:10,
+  fetchOptions:{
+    data:{}
+  },
+  onRequestFinished:function(){
+    var data = this.collection.fetchOptions.data
+    this.page = Math.floor(
+      (data.offset || 0) / this.paginateBy)+1;
+    this.triggerMethod('page:changed');
+    _super(PaginatedMixin,this,'onRequestFinished',true).apply(this,arguments);
+  },
+  fetchPage:function(page){
+    return this.collection.refetch({
+      data:{
+        offset:this.paginateBy*(page-1),
+        limit:this.paginateBy
+      }
+    });
+  },
+  hasPrevPage:function(){
+      return this.page>1
+  },
+  hasNextPage:function(){
+      return this.collection.meta.total>(this.page)*this.paginateBy;
+
   },
   onNextPage:function(){
     if(this.hasNextPage()){
@@ -225,10 +238,9 @@ PaginatedMixin = BaseMixin.extend({
 });
 
 PrefetchListMixin = BaseMixin.extend({
-  defaults:{
-    fetchOptions:{
-      data:{}
-    }
+  defaults:['fetchOptions'],
+  fetchOptions:{
+    data:{}
   },
   initialize:function(){
     _super(PrefetchListMixin,this,'initialize',true).apply(this, arguments);
