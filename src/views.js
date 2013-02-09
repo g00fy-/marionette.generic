@@ -3,8 +3,7 @@ Generic = {
     console.log(event);
     if($(event.target).closest('[data-view]').attr('data-view')!=this.cid){
       return;
-    }
-
+    };
     var action = $(event.target).closest('[data-action]').data('action');
     if (!action){
         // try to find action on this.$el
