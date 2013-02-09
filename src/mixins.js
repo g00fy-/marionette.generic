@@ -67,13 +67,10 @@ SortMixin = BaseMixin.extend({
     }else{
       $el.attr('data-order','desc')
     }
-    this.collection.refetch({data:this.buildSortQuery(field,order)})
-  },
-
-  buildSortQuery:function(field,order){
-      throw 'buildSortQuery undefined';
-  },
-  defaults:['buildSortQuery']
+    var options = {};
+      options[field]=order;
+    this.sort(options);
+  }
 });
 
 MultiSelectMixin = BaseMixin.extend({
@@ -126,14 +123,11 @@ MultiSelectMixin = BaseMixin.extend({
 
 SearchMixin = BaseMixin.extend({
   defaults:['buildSearchQuery'],
-  buildSearchQuery:function(value){
-    throw 'buildSearchQuery not defined';
-  },
   onSearch: _.debounce(function(e){
     _super(SearchMixin, this, "onSearch", true).call(this, e);
     var $el =  $(e.target).closest('[data-action]');
     var value = $el.val() || undefined;
-    this.collection.refetch({data:this.buildSearchQuery(value)});
+    this.search(value);
   }, 500)
 });
 
