@@ -258,3 +258,29 @@ LoadingMixin = BaseMixin.extend({
     this.triggerMethod('request:start');
   }
 });
+
+RouterMixin = BaseMixin.extend({
+  onRoute:function(e){
+    var route, dataset, options = {};
+    route = $(e.target).closest('[data-action=route]').attr('data-route');
+    dataset = $(e.target).closest('[data-action=route]').data();
+    _.each(dataset,function(value,key){
+      if(key!='route' && key.indexOf('route')==0){
+        options[key.toLowerCase().replace('route','')]=value;
+      }
+    });
+    this.route(route,options);
+  },
+  route:function(name,options,extra){
+    extra = extra || {trigger:true,replace:true};
+    var path = (this.routes ||{})[name];
+    if(!path){ console.error('route "'+name+'" not defined'); return;}
+    var url = path;
+    _.each(options,function(value,key){
+      url = url.replace(':'+key,value);
+    });
+    if(url){
+      Backbone.history.navigate(url,extra);
+    }
+  }
+})
