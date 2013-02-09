@@ -1,20 +1,23 @@
 Generic = {
   action: function(event){
+    console.log(event);
+    if($(event.target).closest('[data-view]').attr('data-view')!=this.cid){
+      return;
+    }
+
     var action = $(event.target).closest('[data-action]').data('action');
     if (!action){
         // try to find action on this.$el
         action = this.$el.data('action');
     }
+    console.log(event,action);
     this.triggerMethod(action,event);
   },
   actionEvents: function(){
-    var events = {
-        "click [data-action]:not([data-on])":"action"
-    };
-    for(var i in arguments){
-        var name = arguments[i];
+    var events = {'click [data-action]':'action'};
+    _.each( _.uniq(_.toArray(arguments)),function(name){
         events[name+" [data-action][data-on='"+name+"']"]='action'
-    }
+    });
     return events
   },
   selected:function(view){

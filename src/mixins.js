@@ -267,6 +267,7 @@ LoadingMixin = BaseMixin.extend({
 });
 
 RouterMixin = BaseMixin.extend({
+  defaults:['onItemviewRoute'],
   onRoute:function(e){
     var route, dataset, options = {};
     route = $(e.target).closest('[data-action=route]').attr('data-route');
@@ -289,5 +290,8 @@ RouterMixin = BaseMixin.extend({
     if(url){
       Backbone.history.navigate(url,extra);
     }
+  },
+  onItemviewRoute:function(itemView,e){
+    this.triggerMethod('route',e);
   }
-})
+});
