@@ -214,6 +214,11 @@ PaginatedMixin = BaseMixin.extend({
       this.ui.currentPage.text(this.page);
     }
   },
+  onPaginateByChanged:function(e){
+    var $el = $(e.target).closest('[data-action]')
+    this.paginateBy  = $el.attr('data-paginate-by') || $el.val();
+    this.fetchPage(1);
+  },
   onSearch:function(){
     this.page = 1;
     delete this.collection.fetchOptions.data.offset;
@@ -233,7 +238,8 @@ PrefetchListMixin = BaseMixin.extend({
   },
   prefetch:function(options){
     if(this.paginateBy){
-        options.data.limit = this.paginateBy;
+        this.fetchPage(1);
+        return;
     }
     if(!this.collection.xhr){
       this.collection.refetch(options);
