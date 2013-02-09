@@ -180,9 +180,6 @@ PaginatedMixin = BaseMixin.extend({
 
   page:1,
   paginateBy:10,
-  fetchOptions:{
-    data:{}
-  },
   onRequestFinished:function(){
     this.triggerMethod('page:changed');
     _super(PaginatedMixin,this,'onRequestFinished',true).apply(this,arguments);
@@ -228,10 +225,6 @@ PaginatedMixin = BaseMixin.extend({
 });
 
 PrefetchListMixin = BaseMixin.extend({
-  defaults:['fetchOptions'],
-  fetchOptions:{
-    data:{}
-  },
   initialize:function(){
     _super(PrefetchListMixin,this,'initialize',true).apply(this, arguments);
     this.prefetch(this.fetchOptions);
@@ -248,7 +241,15 @@ PrefetchListMixin = BaseMixin.extend({
 });
 
 LoadingMixin = BaseMixin.extend({
+  defaults:['fetchOptions'],
+  fetchOptions:{
+    data:{}
+  },
   initialize:function(){
+
+    this.fetchOptions = _.clone(this.fetchOptions);
+    this.fetchOptions.data = _.clone(this.fetchOptions.data||{});
+
     _super(LoadingMixin,this,'initialize',true).apply(this,arguments);
     Marionette.bindEntityEvents(this,this.collection,{
       'request':this.triggerMethod.bind(this,'request'),
