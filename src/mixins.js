@@ -23,7 +23,7 @@ BaseMixin.extend = Marionette.extend;
 
 function _super(type, instance, attr, safe){
 
-  while(instance[attr] !== type.prototype[attr]){
+  while(instance[attr] !== type.prototype[attr] || !instance.hasOwnProperty(attr)){
     instance = instance.constructor.__super__;
   }
   while(instance[attr] === type.prototype[attr]){
